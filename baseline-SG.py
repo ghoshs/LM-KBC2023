@@ -129,7 +129,7 @@ def disambiguation_search(item):
             "format": "json", 
             "list": "search", 
             "srlimit": 1,
-            "srprop": "title",
+            "srprop": "titlesnippet",
             "srnamespace": 0,
             "srsearch": item
         }
@@ -143,44 +143,75 @@ def disambiguation_search(item):
         return ""
 
 
+def get_wd_type(wd_ids):
+    url = "https://query.wikidata.org/sparql"
+    query = '''
+SELECT ?obj ?instanceLabel {
+  ?obj wdt:P31 ?instance.
+  VALUES ?obj {'''+' '.join(["wd:"+o for o in wd_ids])+'''}
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+}'''
+    try:
+        data = requests.get(url, params={"format": "json", "query": query})
+        data = data.json()
+    except Exception as e:
+        print(e)
+        print(wd_ids)
+        data = {}
+    labels = {o: [] for o in wd_ids}
+    if "results" in data and "bindings" in data["results"]:
+        for item in data["results"]["bindings"]:
+            label = item["instanceLabel"]["value"]
+            if len(label) > 0:
+                wd_id = item["obj"]["value"].split("/")[-1] 
+                labels[wd_id].append(label)
+    return labels
+
+
 def nl_relation(org_relation, modified_relation):
     relation = re.sub('([A-Z][a-z]+)', r' \1', org_relation).strip().lower()
     relation = relation.split(" ")
     subject_type = relation[0]
     relation = " ".join(relation[1:])
-    if modified_relation:
+    if modified_relation==1:
         if relation == "has member":
             relation = "has members"
         if relation == "located at river":
             relation = "is located at river"
         if relation == "has parts" and subject_type == "compound":
             relation = "has elements"
-        # if relation == "borders country":
-        #     relation = "borders countries"
-        # if relation == "has official language":
-        #     relation = "has official languages"
         if relation == "has states":
             relation = "has provinces"
-        # if relation == "cause of death":
-        #     relation = "has causes of death"
-        # if relation == "has autobiography":
-        #     relation = "has autobiographies"
-        # if relation == "has employer":
-        #     relation = "has employers"
-        # if relation == "has nobel prize" or relation == "has noble prize":
-        #     relation == "has nobel prizes"
-        # if relation == "has profession":
-        #     relation = "has professions"
         if relation == "has spouse":
             relation = "has spouses"
+            
         if relation == "plays instrument":
             relation = "plays instruments"
-        # if relation == "speaks language":
-        #     relation = "speaks languages"
-        # if relation == "basins country":
-        #     relation = "has basin countries"
+        if relation == "speaks language":
+            relation = "speaks languages"
+        if relation == "basins country":
+            relation = "has basin countries"
+        
+        # switch off at test
+        if relation == "borders country":
+            relation = "borders countries"
+
+        if relation == "has official language":
+            relation = "has official languages"
+        if relation == "cause of death":
+            relation = "has causes of death"
+        if relation == "has autobiography":
+            relation = "has autobiographies"
+        if relation == "has employer":
+            relation = "has employers"
+        if relation == "has nobel prize" or relation == "has noble prize":
+            relation == "has nobel prizes"
+        if relation == "has profession":
+            relation = "has professions"
         if relation == "borders state":
             relation = "borders provinces"
+    elif modified_relation == -1:
+        relation = org_relation
     return relation
 
 
@@ -248,6 +279,20 @@ def probe_LLMS(input_df, restart=0, output=None, modified_relation=None, n_examp
     print('Finished probing GPT_3 ................')
 
 
+def get_correct_types(ObjectEntitiesID, surface_forms, obj_type=None):
+    type_corrected = {}
+    wikidata_types = get_wd_type(ObjectEntitiesID)
+    time.sleep(2)
+    for idx, obj in enumerate(ObjectEntitiesID):
+        if not any([x==obj_type for x in wikidata_types[obj]]):
+            surface_form = surface_forms[idx]
+            if obj_type not in surface_form:
+                type_corrected[obj] = disambiguation_baseline(surface_form.strip() + " " + obj_type)
+            else:
+                type_corrected[obj] = ""
+    return type_corrected
+
+
 def clean_objectID_predictions(results, output):
     clean_results = []
     for row in results:
@@ -255,7 +300,7 @@ def clean_objectID_predictions(results, output):
         ObjectEntitiesID = []
         if not isinstance(row["ObjectEntitiesID"], list):
             row["ObjectEntitiesID"] = [row["ObjectEntitiesID"]]
-        for item in row["ObjectEntitiesID"]:
+        for idx, item in enumerate(row["ObjectEntitiesID"]):
             if isinstance(item, int):
                 ObjectEntitiesID.append(str(item))
             else:
@@ -263,7 +308,9 @@ def clean_objectID_predictions(results, output):
                     item = int(item)
                 except ValueError:
                     if item.startswith("Q") and item not in ["Q929804", "Q24238356", "Q4233718", "Q5432619", "Q543287"]:
-                        ObjectEntitiesID.append(str(item))
+                        # surface form is none variant but entity linking to other overloaded terminology
+                        if row["ObjectEntitiesSurfaceForms"][idx].lower() not in ["n/a", "n.a.", "none", "unknown", "false"]:
+                            ObjectEntitiesID.append(str(item))
                     else:
                         ObjectEntitiesID.append("")
                 else:
@@ -271,15 +318,26 @@ def clean_objectID_predictions(results, output):
         if any([item.startswith("Q") for item in ObjectEntitiesID]):
             # If object == subject then keep object empty
             ObjectEntitiesID = [item for item in ObjectEntitiesID if item not in row["SubjectEntityID"]]
+        
+        if row["Relation"] == "CityLocatedAtRiver":
+            type_corrected = get_correct_types(ObjectEntitiesID, row["ObjectEntitiesSurfaceForms"], obj_type="river")
+            ObjectEntitiesID = [type_corrected[obj] if obj in type_corrected else obj for obj in ObjectEntitiesID]
+
         # remove empty strings
         ObjectEntitiesID = [item for item in ObjectEntitiesID if len(item) > 0]
+
+        # Relation specific clean-up
         if row["Relation"] == "PersonHasNoblePrize" and len(row["ObjectEntitiesSurfaceForms"]) > 0 and len(ObjectEntitiesID) == 0:
             for obj in row["ObjectEntitiesSurfaceForms"]:
                 for word in obj.split(" "):
                     if word.lower() in noble_map:
                         ObjectEntitiesID.append(noble_map[word.lower()])
+        
         if len(ObjectEntitiesID) == 0:
             ObjectEntitiesID = [""]
+
+        # remove duplicates:
+        ObjectEntitiesID = list(set(ObjectEntitiesID))
         clean_result = {
             "SubjectEntityID": row["SubjectEntityID"],
             "SubjectEntity": row["SubjectEntity"],
@@ -316,7 +374,6 @@ def run(args):
     else:
         results = read_lm_kbc_jsonl(Path(args.output))
 
-    # results = clean_surfaceforms_predictions(results, args.output)
     clean_objectID_predictions(results, args.output)
 
 
