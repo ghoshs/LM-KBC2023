@@ -13,33 +13,15 @@ from evaluate import *
 
 noble_map = {"physics": "Q38104", "chemistry": "Q44585", "literature": "Q37922", "peace": "Q35637", "medicine": "Q80061", "physiology": "Q80061", "economics": "Q47170"}
 
-def set_prefix(n_example, relation, modified_relation):
+def set_prefix(relation, modified_relation, n_example=0):
     examples = {
-        "BandHasMember":  {"SubjectEntityID": "Q125603", "SubjectEntity": "The Clash", "ObjectEntitiesID": ["Q310052", "Q357310", "Q449804", "Q466088", "Q540440", "Q1389464"], "ObjectEntities": ["Joe Strummer", "Mick Jones", "Paul Simonon", "Terry Chimes", "Topper Headon", "Keith Levene"], "Relation": "BandHasMember"},
-        "CityLocatedAtRiver": {"SubjectEntityID": "Q2079", "SubjectEntity": "Leipzig", "ObjectEntitiesID": ["Q162993", "Q44729"], "ObjectEntities": ["Plei\u00dfe", "Weisse Elster"], "Relation": "CityLocatedAtRiver"},
-        "CompanyHasParentOrganisation": {"SubjectEntityID": "Q35886", "SubjectEntity": "Lamborghini", "ObjectEntitiesID": ["Q23317"], "ObjectEntities": ["Audi"], "Relation": "CompanyHasParentOrganisation"},
-        "CompoundHasParts": {"SubjectEntityID": "Q43656", "SubjectEntity": "Cholesterol", "ObjectEntitiesID": ["Q623", "Q629", "Q556"], "ObjectEntities": ["carbon", "oxygen", "hydrogen"], "Relation": "CompoundHasParts"},
-        "CountryBordersCountry": {"SubjectEntityID": "Q30", "SubjectEntity": "United States of America", "ObjectEntitiesID": ["Q16", "Q96"], "ObjectEntities": ["Canada", "Mexico"], "Relation": "CountryBordersCountry"},
-        "CountryHasOfficialLanguage": {"SubjectEntityID": "Q213", "SubjectEntity": "Czech Republic", "ObjectEntitiesID": ["Q9056"], "ObjectEntities": ["Czech"], "Relation": "CountryHasOfficialLanguage"},
-        "CountryHasStates": {"SubjectEntityID": "Q977", "SubjectEntity": "Djibouti", "ObjectEntitiesID": ["Q283979", "Q645896", "Q705941", "Q821008", "Q844929", "Q12182414"], "ObjectEntities": ["Dikhil Region", "Tadjourah Region", "Arta Region", "Ali Sabieh Region", "Obock Region", "Djibouti Region"], "Relation": "CountryHasStates"},
-        "FootballerPlaysPosition": {"SubjectEntityID": "Q185572", "SubjectEntity": "Mikel Arteta", "ObjectEntitiesID": ["Q193592"], "ObjectEntities": ["midfielder"], "Relation": "FootballerPlaysPosition"},
-        "PersonCauseOfDeath": {"SubjectEntityID": "Q27214", "SubjectEntity": "Jerry Springer", "ObjectEntitiesID": ["Q212961"], "ObjectEntities": ["pancreatic cancer"], "Relation": "PersonCauseOfDeath"},
-        "PersonHasAutobiography": {"SubjectEntityID": "Q11666", "SubjectEntity": "Maria Sharapova", "ObjectEntitiesID": ["Q55663964"], "ObjectEntities": ["Unstoppable"], "Relation": "PersonHasAutobiography"},
-        "PersonHasEmployer": {"SubjectEntityID": "Q2642925", "SubjectEntity": "Alexander S. Kekul\u00e9", "ObjectEntitiesID": ["Q153978", "Q310207", "Q32120"], "ObjectEntities": ["University of T\u00fcbingen", "McKinsey & Company", "University of Halle-Wittenberg"], "Relation": "PersonHasEmployer"},
-        "PersonHasNoblePrize": {"SubjectEntityID": "Q106547", "SubjectEntity": "Paul Lauterbur", "ObjectEntitiesID": ["Q80061"], "ObjectEntities": ["Nobel Prize in Physiology or Medicine"], "Relation": "PersonHasNoblePrize"},
-        "PersonHasNumberOfChildren": {"SubjectEntityID": "Q497827", "SubjectEntity": "Sam Walton", "ObjectEntitiesID": ["4"], "ObjectEntities": ["4"], "Relation": "PersonHasNumberOfChildren"},
-        "PersonHasPlaceOfDeath": {"SubjectEntityID": "Q497827", "SubjectEntity": "Sam Walton", "ObjectEntitiesID": ["4"], "ObjectEntities": ["4"], "Relation": "PersonHasNumberOfChildren"},
-        "PersonHasProfession": {"SubjectEntityID": "Q109677980", "SubjectEntity": "Roman Izyaev", "ObjectEntitiesID": ["Q28389", "Q1797162", "Q2259451", "Q3387717"], "ObjectEntities": ["screenwriter", "artistic director", "stage actor", "theatrical director"], "Relation": "PersonHasProfession"},
-        "PersonHasSpouse": {"SubjectEntityID": "Q20142304", "SubjectEntity": "Camila Queiroz", "ObjectEntitiesID": ["Q951565"], "ObjectEntities": ["Klebber Toledo"], "Relation": "PersonHasSpouse"},
-        "PersonPlaysInstrument": {"SubjectEntityID": "Q15994935", "SubjectEntity": "Emma Blackery", "ObjectEntitiesID": ["Q6607", "Q61285", "Q17172850"], "ObjectEntities": ["guitar", "ukulele", "voice"], "Relation": "PersonPlaysInstrument"},
-        "PersonSpeaksLanguage": {"SubjectEntityID": "Q788439", "SubjectEntity": "Em\u0151ke Bagdy", "ObjectEntitiesID": ["Q188", "Q9058", "Q9067"], "ObjectEntities": ["German", "Slovak", "Hungarian"], "Relation": "PersonSpeaksLanguage"},
-        "RiverBasinsCountry": {"SubjectEntityID": "Q172089", "SubjectEntity": "Oka", "ObjectEntitiesID": ["Q159"], "ObjectEntities": ["Russia"], "Relation": "RiverBasinsCountry"},
-        "SeriesHasNumberOfEpisodes": {"SubjectEntityID": "Q85806507", "SubjectEntity": "The Benza", "ObjectEntitiesID": ["13"], "ObjectEntities": ["13"], "Relation": "SeriesHasNumberOfEpisodes"},
-        "StateBordersState": {"SubjectEntityID": "Q321455", "SubjectEntity": "Beja", "ObjectEntitiesID": ["Q5777", "Q5783", "Q81803", "Q95015", "Q244521", "Q274109", "Q274118"], "ObjectEntities": ["Extremadura", "Andalusia", "Badajoz Province", "Province of Huelva", "Faro", "Set\u00fabal", "\u00c9vora"], "Relation": "StateBordersState"}
+        ## Instantiate with k-examples per relation to be used for few-shot probe.
+        ## Not used in this setup
     }
     if n_example == 0:
         return ""
     else:
+        assert examples[relation]
         train_eg = examples[relation]
         prefix = "(\"" +train_eg["SubjectEntity"] + "\", \"" + modified_relation + "\", "+json.dumps(train_eg["ObjectEntities"])+"). \n"
         return prefix
@@ -76,10 +58,9 @@ def extract_answer(response, subject, relation):
 
 
 # Get an answer from the GPT-API
-def GPT3response(q, subject, relation):
+def GPT3response(model_name, q, subject, relation):
     response = openai.ChatCompletion.create(
-        # model="gpt-3.5-turbo",
-        model="gpt-4",
+        model=model_name,
         messages=[
             {"role": "user", "content": q}],
         temperature=0,
@@ -94,11 +75,11 @@ def GPT3response(q, subject, relation):
     return finalresponse
 
 
-def retry_GPT3response(q, subject, relation, initial_delay=1, curr_retry=0, max_retries=10):
+def retry_GPT3response(model_name, q, subject, relation, initial_delay=1, curr_retry=0, max_retries=10):
     delay = initial_delay
     errors = tuple([openai.error.ServiceUnavailableError, openai.error.RateLimitError, openai.error.APIError, openai.error.Timeout])
     try:
-        response = GPT3response(q, subject, relation)
+        response = GPT3response(model_name, q, subject, relation)
 
     except errors as e:
         curr_retry += 1
@@ -108,7 +89,7 @@ def retry_GPT3response(q, subject, relation, initial_delay=1, curr_retry=0, max_
         delay *= 2 * (1 + random.random())
 
         time.sleep(delay)
-        response = retry_GPT3response(q, subject, relation, delay, curr_retry, max_retries)
+        response = retry_GPT3response(model_name, q, subject, relation, delay, curr_retry, max_retries)
     return response
         
 
@@ -118,27 +99,6 @@ def disambiguation_baseline(item):
         data = requests.get(url).json()
         # Return the first id (Could upgrade this in the future)
         return data['search'][0]['id']
-    except:
-        return ""
-
-
-def disambiguation_search(item):
-    try:
-        params = {
-            "action": "query", 
-            "format": "json", 
-            "list": "search", 
-            "srlimit": 1,
-            "srprop": "titlesnippet",
-            "srnamespace": 0,
-            "srsearch": item
-        }
-        url = 'https://www.wikidata.org/w/api.php'
-        data = requests.get(url=url, params=params).json()
-    except:
-        return ""
-    try:
-        return data['query']['search'][0]['title']
     except:
         return ""
 
@@ -192,30 +152,30 @@ def nl_relation(org_relation, modified_relation):
         if relation == "basins country":
             relation = "has basin countries"
         
-        # switch off at test
-        if relation == "borders country":
-            relation = "borders countries"
+        # # switch off at test
+        # if relation == "borders country":
+        #     relation = "borders countries"
 
-        if relation == "has official language":
-            relation = "has official languages"
-        if relation == "cause of death":
-            relation = "has causes of death"
-        if relation == "has autobiography":
-            relation = "has autobiographies"
-        if relation == "has employer":
-            relation = "has employers"
-        if relation == "has nobel prize" or relation == "has noble prize":
-            relation == "has nobel prizes"
-        if relation == "has profession":
-            relation = "has professions"
-        if relation == "borders state":
-            relation = "borders provinces"
+        # if relation == "has official language":
+        #     relation = "has official languages"
+        # if relation == "cause of death":
+        #     relation = "has causes of death"
+        # if relation == "has autobiography":
+        #     relation = "has autobiographies"
+        # if relation == "has employer":
+        #     relation = "has employers"
+        # if relation == "has nobel prize" or relation == "has noble prize":
+        #     relation == "has nobel prizes"
+        # if relation == "has profession":
+        #     relation = "has professions"
+        # if relation == "borders state":
+        #     relation = "borders provinces"
     elif modified_relation == -1:
         relation = org_relation
     return relation
 
 
-def probe_LLMS(input_df, restart=0, output=None, modified_relation=None, n_example=None, disambiguate=None, has_context=None):
+def probe_LLMS(input_df, restart=0, output=None, modified_relation=None, model_name=None):
     openai.api_key = args.oaikey
     
     results = []
@@ -241,12 +201,12 @@ def probe_LLMS(input_df, restart=0, output=None, modified_relation=None, n_examp
         relation = nl_relation(row["Relation"], modified_relation)
         print(row["Relation"], "-->", relation)
 
-        prefix = set_prefix(n_example, row["Relation"], relation)
+        prefix = set_prefix(row["Relation"], relation)
 
         prompt = prefix + task + "(\"" +row["SubjectEntity"] + "\", \"" + relation + "\", [])"
         print("Prompt is \"{}\"".format(prompt))
 
-        response = retry_GPT3response(prompt, row["SubjectEntity"], relation, 0, 4)
+        response = retry_GPT3response(model_name, prompt, row["SubjectEntity"], relation, 0, 4)
         result = {
             "SubjectEntityID": row["SubjectEntityID"],
             "SubjectEntity": row["SubjectEntity"],
@@ -263,11 +223,8 @@ def probe_LLMS(input_df, restart=0, output=None, modified_relation=None, n_examp
                 if result["Relation"] == "PersonHasNoblePrize":
                     if 'nobel' not in s or 'nobel prize' not in s:
                         s = s + ' nobel prize'
-                if not disambiguate:
-                    result["ObjectEntitiesID"].append(disambiguation_baseline(s))
-                else:
-                    result["ObjectEntitiesID"].append(disambiguation_search(s))
-
+                result["ObjectEntitiesID"].append(disambiguation_baseline(s))
+                
         results.append(result)
 
         with open(Path(output), "a") as f:
@@ -367,9 +324,7 @@ def run(args):
             restart=args.restart,
             output=args.output,
             modified_relation=args.modified_relation,
-            n_example=args.n_example,
-            disambiguate=args.disambiguate,
-            has_context=args.has_context
+            model_name=args.model_name
         )
     else:
         results = read_lm_kbc_jsonl(Path(args.output))
@@ -383,10 +338,9 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--output", type=str, required=True, help="Predictions (output) file")
     parser.add_argument("-k", "--oaikey", type=str, required=True, help="OpenAI API key")
     parser.add_argument("-r", "--restart", type=int, default=0, help="Index to restart probing")
-    parser.add_argument("-m", "--modified_relation", type=int, default=0, help="To use (1) or not use (0) modified relations")
-    parser.add_argument("-n", "--n_example", type=int, default=0, help="To use no example (0) or 1 example (1) in the prompts.")
-    parser.add_argument("-c", "--has_context", type=int, default=0, help="To use (1) or not use (0) relation context")
-    parser.add_argument("-d", "--disambiguate", type=int, default=0, help="To use baseline (0) or search (1) disambiguation")
+    parser.add_argument("-m", "--modified_relation", choices=[0,1], default=0, help="To use (1) or not use (0) modified relations")
+    parser.add_argument("-d", "--disambiguate", choices=[0,1], default=0, help="To use baseline (0) or search (1) disambiguation")
+    parser.add_argument("-llm", "--model_name", choices=["gpt-4", "gpt-3.5-turbo"], default="gpt-3.5-turbo", help="OpenAI model name")
     #parser.add_argument("-f", "--few_shot", type=int, default=5, help="Number of few-shot examples (default: 5)")
     #parser.add_argument("--train_data", type=str, required=True, help="CSV file containing train data for few-shot examples (required)")
 
