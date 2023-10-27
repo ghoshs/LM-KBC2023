@@ -3,13 +3,18 @@ Solution entry to the ISWC 2023 challenge on Knowledge Base Construction from Pr
 
 This work present __Minimal Probe__, which predicts objects provided a subject and relation. Through this challenge, we test the limits of LLMs in zero-shot setting, when it comes to object prediction for the task of knowledge base construction.
 
-- `baseline-SG.py` is our Minimal Probe. 
+1. [Dataset](#dataset)
+1. [Key Challenges](#challenges)
+1. [Scripts](#scripts)
+1. [Resutls](#results)
+1. [Citation](#citation)
+1. [License](#license)
 
-### Dataset
+### Dataset <a name="dataset"></a> 
 
 The (LM-KBC dataset)[https://github.com/lm-kbc/dataset2023] is available on Github. It comprises 21 relations. Each relation has an average of 90 unique subjects in each of its data splits (train/val/test).
 
-### Key Challenges
+### Key Challenges <a name="challenges"></a> 
 
 1. Varying number of objects per subject.
     Distribution of the number of objects is quite varied across relations. The maximum number of objects a subject takes is 20.
@@ -20,6 +25,42 @@ The (LM-KBC dataset)[https://github.com/lm-kbc/dataset2023] is available on Gith
 3. Entity disambiguation.
 	Each object entity must be linked to Wikidata entities. Zero-object subject-relation pairs should predict empty values. 
 
-### Script
+### Scripts <a name="scripts"></a> 
 
-`baseline-GPT3x-NED.py` is an update of the GPT3 baseline provided in the challenge, using chat models.
+1. Baselines
+    - `dataset2023/baseline-GPT3-NED.py`: is the baseline provided in the challenge.
+    - `baseline-GPT3x-NED.py` is an update of the GPT3 baseline above, using chat models.
+    
+To run the models:
+    `python BASELINE.py -i dataset2023/data/val.jsonl -o results/val/BASELINE.jsonl -k YOUR_OPENAI_KEY_HERE`
+
+2. `minimal_probe.py` is our solution.
+
+To recreate the test results run:
+    `python minimal_probe.py -i dataset2023/data/val.jsonl -o results/val/minimal_probe.jsonl -k YOUR_OPENAI_KEY_HERE`
+
+### Results <a name="results"></a> 
+
+
+### Citation <a name="citation"></a> 
+
+If you use our work please cite us:
+
+```bibtex
+@inproceedings{ghosh2023limits,
+    title = "Limits of Zero-shot Probing on Object Prediction",
+    author = "Shrestha Ghosh",
+    booktitle = "To appear at CUER Workshop Proceedings at ISWC 2023",
+    month = nov,
+    year = "2023",
+    url = "https://lm-kbc.github.io/challenge2023/static/papers/paper_3.pdf"
+}
+```
+
+
+### License <a name="license"></a>
+
+Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
+
+This work is licensed under a
+[Creative Commons Attribution 4.0 International License][cc-by].
