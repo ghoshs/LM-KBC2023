@@ -1,5 +1,5 @@
 # Minimal Probe
-Solution entry to the ISWC 2023 challenge on Knowledge Base Construction from Pre-trained Language Models: (LM-KBC)[https://lm-kbc.github.io/challenge2023/].
+Solution entry to the ISWC 2023 challenge on Knowledge Base Construction from Pre-trained Language Models: [LM-KBC](https://lm-kbc.github.io/challenge2023/).
 
 This work present __Minimal Probe__, which predicts objects provided a subject and relation. Through this challenge, we test the limits of LLMs in zero-shot setting, when it comes to object prediction for the task of knowledge base construction.
 
@@ -57,6 +57,7 @@ If you use our work please cite us:
 }
 ```
 
+Full paper available [here](https://lm-kbc.github.io/challenge2023/static/papers/paper_3.pdf)
 
 ### License <a name="license"></a>
 
@@ -64,3 +65,10 @@ Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
 
 This work is licensed under a
 [Creative Commons Attribution 4.0 International License][cc-by].
+
+
+[![CC BY 4.0][cc-by-image]][cc-by]
+
+[cc-by]: http://creativecommons.org/licenses/by/4.0/
+[cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
